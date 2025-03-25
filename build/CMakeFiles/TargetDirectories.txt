@@ -1,0 +1,11 @@
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/CMakeFiles/a1.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/CMakeFiles/edit_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/CMakeFiles/rebuild_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/glfw/CMakeFiles/edit_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/glfw/CMakeFiles/rebuild_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/glfw/src/CMakeFiles/glfw.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/glfw/src/CMakeFiles/edit_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/glfw/src/CMakeFiles/rebuild_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/vecmath/CMakeFiles/vecmath.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/vecmath/CMakeFiles/edit_cache.dir
+/mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/build/vecmath/CMakeFiles/rebuild_cache.dir
