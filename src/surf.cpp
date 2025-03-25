@@ -59,7 +59,6 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
 Surface makeSurfRev(const Curve &profile, unsigned steps)
 {
     Surface surface;
-
     // 检查曲线是否在 xy 平面上
     if (!checkFlat(profile))
     {

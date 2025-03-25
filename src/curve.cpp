@@ -85,31 +85,39 @@ Curve evalBezier(const vector< Vector3f >& P, unsigned steps)
     for (size_t i = 0; i + 3 < P.size(); i += 3)
     {
         // 获取当前段的 4 个控制点
-        Vector3f P0 = P[i];
-        Vector3f P1 = P[i + 1];
-        Vector3f P2 = P[i + 2];
-        Vector3f P3 = P[i + 3];
+        Vector3f P1 = P[i];
+        Vector3f P2 = P[i + 1];
+        Vector3f P3 = P[i + 2];
+        Vector3f P4 = P[i + 3];
 
-        // 生成当前段的曲线点
+        // 递推地生成当前段的曲线点
         for (unsigned j = 0; j <= steps; ++j)
         {
             // 计算参数 t
             float t = static_cast<float>(j) / steps;
 
             // 计算贝塞尔曲线的位置
-            Vector3f position = pow(1 - t, 3) * P0 +
-                                3 * pow(1 - t, 2) * t * P1 +
-                                3 * (1 - t) * pow(t, 2) * P2 +
-                                pow(t, 3) * P3;
+            Vector3f position = P1*(1-3*t+3*pow(t,2)-pow(t,3))+
+								P2*(3*t-6*pow(t,2)+3*pow(t,3))+
+								P3*(3*pow(t,2)-3*pow(t,3))+
+								P4*(pow(t,3));
 
             // 计算贝塞尔曲线的切向量
-            Vector3f tangent = 3 * pow(1 - t, 2) * (P1 - P0) +
-                               6 * (1 - t) * t * (P2 - P1) +
-                               3 * pow(t, 2) * (P3 - P2);
+            Vector3f tangent = P1*(-3+6*t-3*pow(t,2))+
+								P2*(3-12*t+9*pow(t,2))+
+								P3*(6*t-9*pow(t,2))+
+								P4*(3*pow(t,2));
             tangent.normalize();
 
             // 计算法向量和副法向量
-            Vector3f normal = Vector3f::cross(tangent, Vector3f(0, 1, 0));
+			Vector3f normal;
+			if(t == 0){
+				normal = Vector3f::cross(Vector3f(0,0,1), tangent);
+			}
+			else{
+				normal = Vector3f::cross(curve.back().B, tangent);
+			}
+
             normal.normalize();
             Vector3f binormal = Vector3f::cross(tangent, normal);
             binormal.normalize();
