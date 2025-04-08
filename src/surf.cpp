@@ -114,8 +114,10 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
             unsigned current_next = i * profile.size() + j + 1;
             unsigned next_next = next_i * profile.size() + j + 1;
 
-            surface.VF.push_back(Tup3u(current, next, current_next));
-            surface.VF.push_back(Tup3u(next, next_next, current_next));
+            // surface.VF.push_back(Tup3u(current, next, current_next));
+            // surface.VF.push_back(Tup3u(next, next_next, current_next));
+            surface.VF.push_back(Tup3u(current, current_next, next));
+            surface.VF.push_back(Tup3u(next, current_next, next_next));
         }
     }
 
