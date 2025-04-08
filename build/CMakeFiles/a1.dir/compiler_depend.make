@@ -1177,7 +1177,8 @@ CMakeFiles/a1.dir/src/surf.cpp.o: ../src/surf.cpp \
   ../src/gl.h \
   ../glew/include/GL/glew.h \
   /usr/include/GL/glu.h \
-  /usr/include/GL/gl.h
+  /usr/include/GL/gl.h \
+  /usr/include/assert.h
 
 CMakeFiles/a1.dir/src/vertexrecorder.cpp.o: ../src/vertexrecorder.cpp \
   /usr/include/stdc-predef.h \

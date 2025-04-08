@@ -177,4 +177,4 @@ CMakeFiles/a1.dir/src/surf.cpp.o: \
  /mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/src/vertexrecorder.h \
  /mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/src/gl.h \
  /mnt/d/原神，启动！/BaiduSyncdisk/大四下/计算机图形学/starter1/starter1/glew/include/GL/glew.h \
- /usr/include/GL/glu.h /usr/include/GL/gl.h
+ /usr/include/GL/glu.h /usr/include/GL/gl.h /usr/include/assert.h

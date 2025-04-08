@@ -1,5 +1,6 @@
 #include "surf.h"
 #include "vertexrecorder.h"
+#include <assert.h>
 using namespace std;
 
 namespace
@@ -54,11 +55,12 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
  
     return surface;
 }
-#endif
 
+#endif
 Surface makeSurfRev(const Curve &profile, unsigned steps)
 {
     Surface surface;
+
     // 检查曲线是否在 xy 平面上
     if (!checkFlat(profile))
     {
@@ -74,43 +76,44 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
     // 遍历旋转步数
     for (unsigned i = 0; i < steps; ++i)
     {
-        // 计算当前旋转角度
-        float theta = (2 * M_PI * i) / steps;
+        float theta = (2 * M_PI * i) / steps;  // 当前旋转角度
+        
+        // 构造旋转矩阵
+        Matrix4f R = Matrix4f(cos(theta),  0, sin(theta), 0,
+             0,           1, 0, 0,
+            -sin(theta),  0, cos(theta), 0,
+        0 , 0, 0, 1);
+
+        // 计算逆转置矩阵（对于旋转矩阵，逆转置 = 原矩阵）
+        Matrix3f invTransR = R.getSubmatrix3x3(0,0);  // 实际上等于R本身
 
         // 遍历曲线点
         for (size_t j = 0; j < profile.size(); ++j)
         {
-            // 获取当前曲线点的位置
-            Vector3f point = profile[j].V;
+            // 顶点旋转
+            Vector4f point = Vector4f(profile[j].V, 1);
+            Vector4f rotatedPoint = R * point;  // 应用旋转矩阵
+            surface.VV.push_back(rotatedPoint.xyz());
 
-            // 旋转曲线点
-            float x = point.x() * cos(theta) - point.z() * sin(theta);
-            float z = point.x() * sin(theta) + point.z() * cos(theta);
-            Vector3f rotatedPoint(x, point.y(), z);
-
-            // 添加旋转后的顶点
-            surface.VV.push_back(rotatedPoint);
-
-            // 计算法向量（垂直于旋转轴）
-            Vector3f normal = Vector3f(cos(theta), 0, sin(theta));
-            surface.VN.push_back(normal);
+            // 法向量变换（使用逆转置矩阵）
+            Vector3f originalNormal = profile[j].N;
+            Vector3f transformedNormal = invTransR * originalNormal;
+            
+            transformedNormal.normalize();  // 确保单位长度
+            transformedNormal.negate();
+            surface.VN.push_back(transformedNormal);
         }
     }
 
-    // 生成三角面片
-    for (unsigned i = 0; i < steps; ++i)
-    {
+    // 生成三角面片（与原代码一致）
+    for (unsigned i = 0; i < steps; ++i) {
         unsigned next_i = (i + 1) % steps;
-
-        for (size_t j = 0; j + 1 < profile.size(); ++j)
-        {
-            // 获取当前和下一个曲线点的索引
+        for (size_t j = 0; j + 1 < profile.size(); ++j) {
             unsigned current = i * profile.size() + j;
             unsigned next = next_i * profile.size() + j;
             unsigned current_next = i * profile.size() + j + 1;
             unsigned next_next = next_i * profile.size() + j + 1;
 
-            // 添加两个三角面片
             surface.VF.push_back(Tup3u(current, next, current_next));
             surface.VF.push_back(Tup3u(next, next_next, current_next));
         }
@@ -123,6 +126,9 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
 
     return surface;
 }
+
+
+
 #if 0
 Surface makeGenCyl(const Curve &profile, const Curve &sweep )
 {
@@ -162,47 +168,44 @@ Surface makeGenCyl(const Curve &profile, const Curve &sweep)
     // 遍历扫掠曲线的点
     for (size_t i = 0; i < sweep.size(); ++i)
     {
-        // 获取当前扫掠曲线的位置和切向量
+        // 获取当前扫掠曲线的 Frenet 框架（T, N, B）
         Vector3f sweepPoint = sweep[i].V;
         Vector3f sweepTangent = sweep[i].T;
-
-        // 计算法向量和副法向量
         Vector3f sweepNormal = sweep[i].N;
         Vector3f sweepBinormal = sweep[i].B;
 
         // 遍历轮廓曲线的点
         for (size_t j = 0; j < profile.size(); ++j)
         {
-            // 获取当前轮廓曲线的位置
+            // 变换顶点位置
             Vector3f profilePoint = profile[j].V;
-
-            // 将轮廓曲线的点变换到扫掠曲线的坐标系
             Vector3f transformedPoint = sweepPoint +
                                         profilePoint.x() * sweepBinormal +
                                         profilePoint.y() * sweepNormal +
                                         profilePoint.z() * sweepTangent;
-
-            // 添加变换后的顶点
             surface.VV.push_back(transformedPoint);
 
-            // 计算法向量（与扫掠曲线的法向量一致）
-            Vector3f normal = sweepNormal;
-            surface.VN.push_back(normal);
+            // 变换法向量（使用 Frenet 框架）
+            Vector3f profileNormal = profile[j].N;
+            Vector3f transformedNormal = profileNormal.x() * sweepBinormal +
+                                        profileNormal.y() * sweepNormal +
+                                        profileNormal.z() * sweepTangent;
+            transformedNormal.normalize();  // 确保单位长度
+            transformedNormal.negate();
+            surface.VN.push_back(transformedNormal);
         }
     }
 
-    // 生成三角面片
+    // 生成三角面片（与原代码一致）
     for (size_t i = 0; i + 1 < sweep.size(); ++i)
     {
         for (size_t j = 0; j + 1 < profile.size(); ++j)
         {
-            // 获取当前和下一个轮廓曲线的索引
             unsigned current = i * profile.size() + j;
             unsigned next = (i + 1) * profile.size() + j;
             unsigned current_next = i * profile.size() + j + 1;
             unsigned next_next = (i + 1) * profile.size() + j + 1;
 
-            // 添加两个三角面片
             surface.VF.push_back(Tup3u(current, next, current_next));
             surface.VF.push_back(Tup3u(next, next_next, current_next));
         }
