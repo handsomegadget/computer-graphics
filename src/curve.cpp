@@ -80,6 +80,10 @@ Curve evalBezier(const vector< Vector3f >& P, unsigned steps)
 
     // 初始化返回的曲线
     Curve curve;
+	Vector3f b(0.0f, 0.0f, 1.0f);
+	Vector3f b_x(1.0f,0.0f,0.0f);
+	Vector3f b_y(0.0f,1.0f,0.0f);
+	Vector3f zero(0.0f,0.0f,0.0f);
 
     // 分段处理贝塞尔曲线
     for (size_t i = 0; i + 3 < P.size(); i += 3)
@@ -109,19 +113,23 @@ Curve evalBezier(const vector< Vector3f >& P, unsigned steps)
 								P4*(3*pow(t,2));
             tangent.normalize();
 
-            // 计算法向量和副法向量
-			Vector3f normal;
-			if(t == 0){
-				normal = Vector3f::cross(Vector3f(0,0,1), tangent);
+			//计算次法线
+			Vector3f B_prime = b;
+			if (Vector3f::cross(B_prime,tangent).norm() < 1e-6f){
+				if(Vector3f::cross(tangent,b_x).norm() >= 1e-6f){
+					B_prime = b_x;
+				}
+				else if (Vector3f::cross(tangent,b_y).norm() >= 1e-6f){
+					B_prime =b_y;
+				}
+				else{
+					cerr<<("Error::Can't find a B_0!")<<endl;
+					exit(0);
+				}
 			}
-			else{
-				normal = Vector3f::cross(curve.back().B, tangent);
-			}
-
-            normal.normalize();
-            Vector3f binormal = Vector3f::cross(tangent, normal);
-            binormal.normalize();
-
+			Vector3f normal = Vector3f::cross(B_prime,tangent).normalized();
+			Vector3f binormal = Vector3f::cross(tangent,normal).normalized();
+			b = binormal;
             // 创建曲线点并添加到曲线中
             CurvePoint point;
             point.V = position;
@@ -188,20 +196,20 @@ Curve evalBspline(const vector< Vector3f >& P, unsigned steps)
     // 初始化返回的曲线
     Curve curve;
 
-    // 将 B 样条曲线转换为分段贝塞尔曲线
+    // 将B样条曲线转换为分段贝塞尔曲线
     for (size_t i = 0; i + 3 < P.size(); ++i)
     {
-        // 获取当前段的 4 个控制点
+        // 获取当前段的4个控制点
         Vector3f P0 = P[i];
         Vector3f P1 = P[i + 1];
         Vector3f P2 = P[i + 2];
         Vector3f P3 = P[i + 3];
 
-        // 将 B 样条控制点转换为贝塞尔控制点
-        Vector3f B0 = (P0 + 4 * P1 + P2) / 6;
-        Vector3f B1 = (2 * P1 + P2) / 3;
-        Vector3f B2 = (P1 + 2 * P2) / 3;
-        Vector3f B3 = (P1 + 4 * P2 + P3) / 6;
+        // 将B样条控制点转换为贝塞尔控制点
+        Vector3f B0 = (P0 + 4 * P1 + P2) / 6.0f;
+        Vector3f B1 = (2 * P1 + P2) / 3.0f;
+        Vector3f B2 = (P1 + 2 * P2) / 3.0f;
+        Vector3f B3 = (P1 + 4 * P2 + P3) / 6.0f;
 
         // 构建贝塞尔控制点向量
         vector< Vector3f > bezierPoints = { B0, B1, B2, B3 };

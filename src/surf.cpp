@@ -82,7 +82,7 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
         Matrix4f R = Matrix4f(cos(theta),  0, sin(theta), 0,
              0,           1, 0, 0,
             -sin(theta),  0, cos(theta), 0,
-        0 , 0, 0, 1);
+            0 , 0, 0, 1);
 
         // 计算逆转置矩阵（对于旋转矩阵，逆转置 = 原矩阵）
         Matrix3f invTransR = R.getSubmatrix3x3(0,0);  // 实际上等于R本身
@@ -105,7 +105,7 @@ Surface makeSurfRev(const Curve &profile, unsigned steps)
         }
     }
 
-    // 生成三角面片（与原代码一致）
+    // 生成三角面片
     for (unsigned i = 0; i < steps; ++i) {
         unsigned next_i = (i + 1) % steps;
         for (size_t j = 0; j + 1 < profile.size(); ++j) {
