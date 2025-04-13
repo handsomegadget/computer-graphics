@@ -175,8 +175,6 @@ B3 = (P1 + 4*P2 + P3) / 6
         // 将生成的贝塞尔曲线段添加到结果曲线中
         curve.insert(curve.end(), bezierSegment.begin(), bezierSegment.end());
 ```
-### 生成图形结果
-
 # 任务2：曲面的绘制
 ## 旋转曲面
 ### 旋转曲面实现方式
@@ -235,7 +233,83 @@ for (unsigned i = 0; i < steps; ++i) {
     }
 }
 ```
-### 生成图片结果
+
+
+
+
+## 广义圆柱体
+### 广义圆柱体
+将一个二维轮廓曲线 \( P(u) \) 在三维空间中，沿着一条扫掠路径 \( C(v) \) 进行移动，并且在每个位置根据该点的 Frenet 框架（Tangent, Normal, Binormal）进行刚体变换。
+
+数学表达式：
+
+\[
+S(u,v) = C(v) + P_x(u) \cdot B(v) + P_y(u) \cdot N(v) + P_z(u) \cdot T(v)
+\]
+
+- \( C(v) \)：扫掠曲线上的点
+- \( P(u) \)：轮廓曲线上的点（必须是二维的，一般在 xy 平面）
+- \( T(v), N(v), B(v) \)：扫掠曲线上的 Frenet 框架（三个正交单位向量）
+- \( S(u, v) \)：最终生成的曲面上的点
+
+用由传入参数sweep的N、B、T、V定义的坐标系，profile绕sweep旋转得到多个重复的profile，再用三角形连接这些profile的副本，即得到了广义圆柱体。
+
+### 具体代码分析
+1. 提取扫掠曲线上的点和Frenet框架信息：遍历扫掠曲线上的每一个采样点`sweep[i]`，并提取该点的三维位置V和对应的 Frenet框架。
+```cpp
+// 遍历扫掠曲线的点
+    for (size_t i = 0; i < sweep.size(); ++i)
+    {
+        // 获取当前扫掠曲线的 Frenet 框架（T, N, B）
+        Vector3f sweepPoint = sweep[i].V;
+        Vector3f sweepTangent = sweep[i].T;
+        Vector3f sweepNormal = sweep[i].N;
+        Vector3f sweepBinormal = sweep[i].B;
+```
+2. 轮廓点在Frenet框架中变换：profilePoint原本处于二维空间，其三个分量在局部坐标系中分别代表沿 binormal、normal、tangent 方向的位移；法向量也要通过同样方式进行旋转变换，生成正确朝向的法线。
+```cpp
+       // 遍历轮廓曲线的点
+        for (size_t j = 0; j < profile.size(); ++j)
+        {
+            // 变换顶点位置
+            Vector3f profilePoint = profile[j].V;
+            Vector3f transformedPoint = sweepPoint +
+                                        profilePoint.x() * sweepBinormal +
+                                        profilePoint.y() * sweepNormal +
+                                        profilePoint.z() * sweepTangent;
+            surface.VV.push_back(transformedPoint);
+
+            // 变换法向量（使用 Frenet 框架）
+            Vector3f profileNormal = profile[j].N;
+            Vector3f transformedNormal = profileNormal.x() * sweepBinormal +
+                                        profileNormal.y() * sweepNormal +
+                                        profileNormal.z() * sweepTangent;
+            transformedNormal.normalize();  // 确保单位长度
+            transformedNormal.negate();
+            surface.VN.push_back(transformedNormal);
+        }
+    }
+```
+3. 构造三角面片
+```cpp
+    // 生成三角面片（与原代码一致）
+    for (size_t i = 0; i + 1 < sweep.size(); ++i)
+    {
+        for (size_t j = 0; j + 1 < profile.size(); ++j)
+        {
+            unsigned current = i * profile.size() + j;
+            unsigned next = (i + 1) * profile.size() + j;
+            unsigned current_next = i * profile.size() + j + 1;
+            unsigned next_next = (i + 1) * profile.size() + j + 1;
+
+            surface.VF.push_back(Tup3u(current, next, current_next));
+            surface.VF.push_back(Tup3u(next, next_next, current_next));
+        }
+    }
+```
+# 结果展示
+
+
 
 ![屏幕截图 2025-04-13 122610](report/屏幕截图 2025-04-13 122610.png)
 
@@ -258,7 +332,3 @@ for (unsigned i = 0; i < steps; ++i) {
 ![屏幕截图 2025-04-13 122820](report/屏幕截图 2025-04-13 122820.png)
 
 ![屏幕截图 2025-04-13 122827](report/屏幕截图 2025-04-13 122827.png)
-
-
-
-# 附加
