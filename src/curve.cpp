@@ -115,11 +115,14 @@ Curve evalBezier(const vector< Vector3f >& P, unsigned steps)
 
 			//计算次法线
 			Vector3f B_prime = b;
-			if (Vector3f::cross(B_prime,tangent).norm() < 1e-6f){
-				if(Vector3f::cross(tangent,b_x).norm() >= 1e-6f){
+			if (Vector3f::cross(B_prime,tangent).abs() < 1e-6f)
+			{
+				if(Vector3f::cross(tangent,b_x).abs() >= 1e-6f)
+				{
 					B_prime = b_x;
 				}
-				else if (Vector3f::cross(tangent,b_y).norm() >= 1e-6f){
+				else if (Vector3f::cross(tangent,b_y).abs() >= 1e-6f)
+				{
 					B_prime =b_y;
 				}
 				else{
