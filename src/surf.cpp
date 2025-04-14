@@ -162,56 +162,101 @@ Surface makeGenCyl(const Curve &profile, const Curve &sweep)
         exit(0);
     }
 
-    // 初始化表面数据
     surface.VV.clear();
     surface.VN.clear();
     surface.VF.clear();
 
-    // 遍历扫掠曲线的点
-    for (size_t i = 0; i < sweep.size(); ++i)
-    {
-        // 获取当前扫掠曲线的 Frenet 框架（T, N, B）
-        Vector3f sweepPoint = sweep[i].V;
-        Vector3f sweepTangent = sweep[i].T;
-        Vector3f sweepNormal = sweep[i].N;
-        Vector3f sweepBinormal = sweep[i].B;
+    unsigned int steps = sweep.size();
 
-        // 遍历轮廓曲线的点
-        for (size_t j = 0; j < profile.size(); ++j)
-        {
-            // 变换顶点位置
-            Vector3f profilePoint = profile[j].V;
-            Vector3f transformedPoint = sweepPoint +
-                                        profilePoint.x() * sweepBinormal +
-                                        profilePoint.y() * sweepNormal +
-                                        profilePoint.z() * sweepTangent;
-            surface.VV.push_back(transformedPoint);
+    // 先构造所有的顶点和法线
+    for (unsigned int i = 0; i < steps; ++i) {
+        // 构造仿射变换矩阵 M（从局部坐标系变换到世界坐标系）
+        Matrix4f M(
+            Vector4f(sweep[i].N, 0),
+            Vector4f(sweep[i].B, 0),
+            Vector4f(sweep[i].T, 0),
+            Vector4f(sweep[i].V, 1)
+        );
 
-            // 变换法向量（使用 Frenet 框架）
-            Vector3f profileNormal = profile[j].N;
-            Vector3f transformedNormal = profileNormal.x() * sweepBinormal +
-                                        profileNormal.y() * sweepNormal +
-                                        profileNormal.z() * sweepTangent;
-            transformedNormal.normalize();  // 确保单位长度
-            transformedNormal.negate();
-            surface.VN.push_back(transformedNormal);
+        // 预计算法线变换矩阵
+        Matrix4f NormalTransform = M.inverse().transposed();
+
+        // 遍历轮廓曲线上的每一个点
+        for (unsigned int j = 0; j < profile.size(); ++j) {
+            Vector4f v_local(profile[j].V, 1);   // 轮廓曲线点的局部坐标
+            Vector4f n_local(profile[j].N, 0);   // 法线是方向向量，w=0
+
+            Vector3f v_world = (M * v_local).xyz();                     // 变换后的世界坐标点
+            Vector3f n_world = (NormalTransform * n_local).xyz().normalized(); // 变换后的世界坐标法线
+
+            surface.VV.push_back(v_world);
+            surface.VN.push_back(-n_world);  // 注意是负的法线
         }
     }
 
-    // 生成三角面片（与原代码一致）
-    for (size_t i = 0; i + 1 < sweep.size(); ++i)
-    {
-        for (size_t j = 0; j + 1 < profile.size(); ++j)
-        {
-            unsigned current = i * profile.size() + j;
-            unsigned next = (i + 1) * profile.size() + j;
-            unsigned current_next = i * profile.size() + j + 1;
-            unsigned next_next = (i + 1) * profile.size() + j + 1;
+    // 生成三角面片
+    for (unsigned int i = 0; i < steps; ++i) {
+        unsigned int next_i = (i + 1) % steps;
+        for (unsigned int j = 0; j + 1 < profile.size(); ++j) {
+            unsigned int current = i * profile.size() + j;
+            unsigned int next = next_i * profile.size() + j;
+            unsigned int current_next = i * profile.size() + j + 1;
+            unsigned int next_next = next_i * profile.size() + j + 1;
 
-            surface.VF.push_back(Tup3u(current, next, current_next));
-            surface.VF.push_back(Tup3u(next, next_next, current_next));
+            surface.VF.push_back(Tup3u(current, current_next, next));
+            surface.VF.push_back(Tup3u(next, current_next, next_next));
         }
     }
+    // // 初始化表面数据
+    // surface.VV.clear();
+    // surface.VN.clear();
+    // surface.VF.clear();
+
+    // // 遍历扫掠曲线的点
+    // for (size_t i = 0; i < sweep.size(); ++i)
+    // {
+    //     // 获取当前扫掠曲线的 Frenet 框架（T, N, B）
+    //     Vector3f sweepPoint = sweep[i].V;
+    //     Vector3f sweepTangent = sweep[i].T;
+    //     Vector3f sweepNormal = sweep[i].N;
+    //     Vector3f sweepBinormal = sweep[i].B;
+
+    //     // 遍历轮廓曲线的点
+    //     for (size_t j = 0; j < profile.size(); ++j)
+    //     {
+    //         // 变换顶点位置
+    //         Vector3f profilePoint = profile[j].V;
+    //         Vector3f transformedPoint = sweepPoint +
+    //                                     profilePoint.x() * sweepBinormal +
+    //                                     profilePoint.y() * sweepNormal +
+    //                                     profilePoint.z() * sweepTangent;
+    //         surface.VV.push_back(transformedPoint);
+
+    //         // 变换法向量（使用 Frenet 框架）
+    //         Vector3f profileNormal = profile[j].N;
+    //         Vector3f transformedNormal = profileNormal.x() * sweepBinormal +
+    //                                     profileNormal.y() * sweepNormal +
+    //                                     profileNormal.z() * sweepTangent;
+    //         transformedNormal.normalize();  // 确保单位长度
+    //         transformedNormal.negate();
+    //         surface.VN.push_back(transformedNormal);
+    //     }
+    // }
+
+    // // 生成三角面片（与原代码一致）
+    // for (size_t i = 0; i + 1 < sweep.size(); ++i)
+    // {
+    //     for (size_t j = 0; j + 1 < profile.size(); ++j)
+    //     {
+    //         unsigned current = i * profile.size() + j;
+    //         unsigned next = (i + 1) * profile.size() + j;
+    //         unsigned current_next = i * profile.size() + j + 1;
+    //         unsigned next_next = (i + 1) * profile.size() + j + 1;
+
+    //         surface.VF.push_back(Tup3u(current, next, current_next));
+    //         surface.VF.push_back(Tup3u(next, next_next, current_next));
+    //     }
+    // }
 
     cerr << "\t>>> makeGenCyl called. Returning surface with "
          << surface.VV.size() << " vertices, "
