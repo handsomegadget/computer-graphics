@@ -307,6 +307,47 @@ S(u,v) = C(v) + P_x(u) \cdot B(v) + P_y(u) \cdot N(v) + P_z(u) \cdot T(v)
         }
     }
 ```
+# 附加：曲面闭合
+## 插值方法分析
+
+为了计算向量 A 与 B 之间的夹角 $\alpha$，根据向量余弦公式，有：
+
+$$
+\alpha = \arccos \left( \frac{A \cdot B}{|A||B|} \right)
+$$
+
+将公式应用于曲面法向量 $N$ 和次法向量 $B$ 的起始值与终止值之间的夹角，可分别写为：
+
+- 法向量 $N$ 的夹角：
+
+$$
+\alpha_N = \arccos\left( \frac{ \mathbf{N}_0 \cdot \mathbf{N}_{n-1} }{ \|\mathbf{N}_0\| \cdot \|\mathbf{N}_{n-1}\| } \right)
+$$
+
+- 次法向量 $B$ 的夹角：
+
+$$
+\alpha_B = \arccos\left( \frac{ \mathbf{B}_0 \cdot \mathbf{B}_{n-1} }{ \|\mathbf{B}_0\| \cdot \|\mathbf{B}_{n-1}\| } \right)
+$$
+
+其中，$\mathbf{N}_0$ 和 $\mathbf{B}_0$ 表示第一个剖面的法向量和次法向量，$\mathbf{N}_{n-1}$ 和 $\mathbf{B}_{n-1}$ 表示最后一个剖面的对应向量，$n = \text{sweep.size()}$。
+
+根据罗德里格斯旋转公式，若设 $v$ 为需要旋转的向量，$k$ 为旋转轴的单位向量，$\theta$ 为旋转角度，那么旋转后的向量 $v_{rot}$ 可表示为：
+
+$$
+v_{rot} = \cos\theta \cdot v + (1 - \cos\theta)(v \cdot k)k + \sin\theta (k \times v)
+$$
+
+将上述公式应用到法向量 $N$ 和次法向量 $B$ 上，旋转后的新向量可表示为：
+
+$$
+N' = \cos\theta \cdot N + \sin\theta \cdot B \\
+B' = \cos\theta \cdot B - \sin\theta \cdot N
+$$
+
+用 $N'$ 和 $B'$ 替换 sweep 曲面中每一剖面对应的法向量 $N$ 和次法向量 $B$，即可生成连续平滑的旋转曲面。
+## 具体代码分析
+
 # 结果展示
 
 
