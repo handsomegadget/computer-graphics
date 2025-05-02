@@ -67,20 +67,56 @@ Renderer::Render()
 
 
 
-Vector3f
-Renderer::traceRay(const Ray &r,
+Vector3f Renderer::traceRay(const Ray &ray,
     float tmin,
     int bounces,
-    Hit &h) const
+    Hit &hit) const
 {
-    // The starter code only implements basic drawing of sphere primitives.
-    // You will implement phong shading, recursive ray tracing, and shadow rays.
+// Step 1: Intersect ray with scene geometry
+if (!_scene.getGroup()->intersect(ray, tmin, hit)) {
+return _scene.getBackgroundColor(ray.getDirection());
+}
 
-    // TODO: IMPLEMENT 
-    if (_scene.getGroup()->intersect(r, tmin, h)) {
-        return h.getMaterial()->getDiffuseColor();
-    } else {
-        return Vector3f(0, 0, 0);
-    };
+Vector3f color(0, 0, 0);                         // Final color
+Vector3f hitPoint = ray.pointAtParameter(hit.getT());
+Vector3f normal = hit.getNormal();
+Material *material = hit.getMaterial();
+
+// Step 2: Direct illumination from all lights
+for (int i = 0; i < _scene.getNumLights(); ++i) {
+Vector3f dirToLight, lightIntensity;
+float distToLight;
+_scene.getLight(i)->getIllumination(hitPoint, dirToLight, lightIntensity, distToLight);
+
+// Step 2.1: Shadow ray check
+bool inShadow = false;
+if (_args.shadows) {
+Ray shadowRay(hitPoint + dirToLight * 1e-3f, dirToLight); // Avoid self-intersection
+Hit shadowHit;
+if (_scene.getGroup()->intersect(shadowRay, 1e-3f, shadowHit) && shadowHit.t < distToLight) {
+inShadow = true;
+}
+}
+
+// Step 2.2: Add contribution if not in shadow
+if (!inShadow) {
+color += material->shade(ray, hit, dirToLight, lightIntensity);
+}
+}
+
+// Step 3: Add ambient light
+color += _scene.getAmbientLight() * material->getDiffuseColor();
+
+// Step 4: Recursive reflection
+if (bounces > 0) {
+Vector3f viewDir = -ray.getDirection();
+Vector3f reflectDir = ray.getDirection() - 2 * Vector3f::dot(ray.getDirection(), normal) * normal;
+Ray reflectRay(hitPoint + reflectDir * 1e-3f, reflectDir); // Avoid self-hit
+Hit reflectHit;
+Vector3f reflectedColor = traceRay(reflectRay, 1e-3f, bounces - 1, reflectHit);
+color += reflectedColor * material->getSpecularColor();
+}
+
+return color;
 }
 

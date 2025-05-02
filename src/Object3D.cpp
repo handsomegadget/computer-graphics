@@ -78,27 +78,109 @@ bool Group::intersect(const Ray &r, float tmin, Hit &h) const
 }
 
 
-Plane::Plane(const Vector3f &normal, float d, Material *m) : Object3D(m) {
-    // TODO implement Plane constructor
-}
-bool Plane::intersect(const Ray &r, float tmin, Hit &h) const
+Plane::Plane(const Vector3f &normal, float d, Material *m)
+    : Object3D(m), _normal(normal.normalized()), _d(d)
 {
-    // TODO implement
-    return false;
+    // Ensure the normal is a unit vector for consistent shading
 }
-bool Triangle::intersect(const Ray &r, float tmin, Hit &h) const 
+
+bool Plane::intersect(const Ray &ray, float tmin, Hit &hit) const
 {
-    // TODO implement
-    return false;
+    const Vector3f &rayOrigin = ray.getOrigin();
+    const Vector3f &rayDir = ray.getDirection();
+
+    float denom = Vector3f::dot(rayDir, _normal);
+
+    // If denom is near zero, the ray is parallel to the plane
+    if (fabs(denom) < 1e-6f) {
+        return false;
+    }
+
+    float t = (_d - Vector3f::dot(rayOrigin, _normal)) / denom;
+
+    // Ignore intersections behind the ray start or too close
+    if (t < tmin || t >= hit.getT()) {
+        return false;
+    }
+
+    // Valid intersection, update the hit record
+    hit.set(t, this->material, _normal);
+    return true;
 }
 
 
-Transform::Transform(const Matrix4f &m,
-    Object3D *obj) : _object(obj) {
-    // TODO implement Transform constructor
-}
-bool Transform::intersect(const Ray &r, float tmin, Hit &h) const
+
+
+bool Triangle::intersect(const Ray &ray, float tmin, Hit &hit) const 
 {
-    // TODO implement
+    // Step 1: Define triangle edges
+    Vector3f edge1 = _v[1] - _v[0];
+    Vector3f edge2 = _v[2] - _v[0];
+
+    // Step 2: Build matrix for solving [u, v, t]
+    Matrix3f M(edge1, edge2, -ray.getDirection());
+
+    // Step 3: Solve the linear system M * [u, v, t]^T = ray.origin - v0
+    Vector3f rhs = ray.getOrigin() - _v[0];
+
+    // Check if the matrix is invertible (triangle not degenerate or ray parallel)
+    if (fabs(M.determinant()) < 1e-6f) {
+        return false;
+    }
+
+    Vector3f solution = M.inverse() * rhs;
+    float u = solution.x();
+    float v = solution.y();
+    float t = solution.z();
+
+    // Step 4: Validate barycentric coordinates and ray parameter t
+    bool isInsideTriangle = (u >= 0.0f) && (v >= 0.0f) && (u + v <= 1.0f);
+    bool isValidT = (t >= tmin) && (t < hit.getT());
+
+    if (!isInsideTriangle || !isValidT) {
+        return false;
+    }
+
+    // Step 5: Compute interpolated normal (barycentric)
+    Vector3f interpolatedNormal = (1.0f - u - v) * _normals[0] + u * _normals[1] + v * _normals[2];
+    interpolatedNormal.normalize();
+
+    // Step 6: Update hit record
+    hit.set(t, this->material, interpolatedNormal);
+    return true;
+}
+
+
+
+Transform::Transform(const Matrix4f &m, Object3D *obj)
+    : _m(m), _object(obj)
+{
+    // Store transformation matrix and target object
+}
+
+bool Transform::intersect(const Ray &ray, float tmin, Hit &hit) const
+{
+    // Step 1: Transform ray from world space to object (local) space
+    Matrix4f worldToLocal = _m.inverse();
+
+    Vector3f transformedOrigin = (worldToLocal * Vector4f(ray.getOrigin(), 1)).xyz();
+    Vector3f transformedDirection = (worldToLocal * Vector4f(ray.getDirection(), 0)).xyz();
+
+    Ray rayLocal(transformedOrigin, transformedDirection);
+
+    // Step 2: Intersect in object’s local space
+    Hit localHit;
+    float scaledTmin = tmin * transformedDirection.abs(); // conservative scaling
+
+    if (_object->intersect(rayLocal, scaledTmin, localHit)) {
+        // Step 3: Transform the local-space normal back to world space
+        Matrix4f normalTransform = worldToLocal.transposed(); // transpose(inverse(M))
+        Vector3f worldNormal = (normalTransform * Vector4f(localHit.getNormal(), 0)).xyz().normalized();
+
+        // Step 4: Commit the hit with world-space normal
+        hit.set(localHit.getT(), localHit.getMaterial(), worldNormal);
+        return true;
+    }
+
     return false;
 }
