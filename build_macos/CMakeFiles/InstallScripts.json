@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/kaixuanfan/codes/Graphic/computer-graphics/build/cmake_install.cmake",
+		"/Users/kaixuanfan/codes/Graphic/computer-graphics/build/vecmath/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

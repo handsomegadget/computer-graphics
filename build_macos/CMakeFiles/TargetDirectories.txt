@@ -1,0 +1,6 @@
+/Users/kaixuanfan/codes/Graphic/computer-graphics/build/CMakeFiles/a2.dir
+/Users/kaixuanfan/codes/Graphic/computer-graphics/build/CMakeFiles/edit_cache.dir
+/Users/kaixuanfan/codes/Graphic/computer-graphics/build/CMakeFiles/rebuild_cache.dir
+/Users/kaixuanfan/codes/Graphic/computer-graphics/build/vecmath/CMakeFiles/vecmath.dir
+/Users/kaixuanfan/codes/Graphic/computer-graphics/build/vecmath/CMakeFiles/edit_cache.dir
+/Users/kaixuanfan/codes/Graphic/computer-graphics/build/vecmath/CMakeFiles/rebuild_cache.dir
